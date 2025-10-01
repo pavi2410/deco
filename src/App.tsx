@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { TopBar } from './components/TopBar';
 import { FileTree } from './components/FileTree';
 import { CodeEditor } from './components/CodeEditor';
 import { Console } from './components/Console';
@@ -70,8 +71,9 @@ function App() {
   const fileNames: FileName[] = ['script.js', 'style.css', 'index.html'];
 
   return (
-    <div className="h-screen bg-background text-foreground">
-      <ResizablePanelGroup direction="vertical">
+    <div className="h-screen bg-background text-foreground flex flex-col">
+      <TopBar />
+      <ResizablePanelGroup direction="vertical" className="flex-1">
         <ResizablePanel defaultSize={60} minSize={30}>
           <ResizablePanelGroup direction="horizontal">
             <ResizablePanel defaultSize={20} minSize={10} maxSize={40}>
