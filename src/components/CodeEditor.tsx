@@ -20,9 +20,9 @@ export function CodeEditor({ value, onChange, fileName }: CodeEditorProps) {
   };
 
   return (
-    <div className="code-editor">
-      <div className="editor-header">
-        <span className="editor-title">{fileName}</span>
+    <div className="h-full flex flex-col overflow-hidden">
+      <div className="bg-card px-4 py-2 border-b border-border text-[13px]">
+        <span className="text-foreground">{fileName}</span>
       </div>
       <CodeMirror
         value={value}

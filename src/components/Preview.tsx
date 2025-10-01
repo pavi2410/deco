@@ -103,13 +103,13 @@ export function Preview({ files, onConsoleLog, onPreviewUpdate }: PreviewProps) 
   }, [onConsoleLog]);
 
   return (
-    <div className="preview">
-      <div className="preview-header">
+    <div className="h-full flex flex-col bg-background">
+      <div className="flex items-center px-3 py-2 bg-card border-b border-border text-[13px] font-semibold">
         <span>Web View</span>
       </div>
       <iframe
         ref={iframeRef}
-        className="preview-iframe"
+        className="flex-1 border-none bg-white w-full h-full"
         sandbox="allow-scripts allow-same-origin"
         title="Preview"
       />

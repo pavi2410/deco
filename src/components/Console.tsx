@@ -1,3 +1,5 @@
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import type { ConsoleLog } from '../types';
 
 interface ConsoleProps {
@@ -8,48 +10,56 @@ interface ConsoleProps {
 }
 
 export function Console({ logs, onClear, persistLogs, onTogglePersist }: ConsoleProps) {
-  const getLogClass = (type: ConsoleLog['type']) => {
+  const getLogColor = (type: ConsoleLog['type']) => {
     switch (type) {
       case 'error':
-        return 'console-error';
+        return 'text-destructive';
       case 'warn':
-        return 'console-warn';
+        return 'text-chart-1';
       case 'info':
-        return 'console-info';
+        return 'text-chart-2';
       default:
-        return 'console-log';
+        return 'text-foreground';
     }
   };
 
   return (
-    <div className="console">
-      <div className="console-header">
+    <div className="h-full flex flex-col bg-background">
+      <div className="flex justify-between items-center px-3 py-2 bg-card border-b border-border text-[13px] font-semibold">
         <span>Console</span>
-        <div className="console-controls">
-          <label className="console-persist">
+        <div className="flex items-center gap-3">
+          <label className="flex items-center gap-1.5 text-[11px] font-normal text-muted-foreground cursor-pointer hover:text-foreground">
             <input
               type="checkbox"
               checked={persistLogs}
               onChange={onTogglePersist}
+              className="cursor-pointer"
             />
             <span>Persist logs</span>
           </label>
-          <button onClick={onClear} className="console-clear">
+          <Button
+            onClick={onClear}
+            variant="ghost"
+            size="sm"
+            className="h-auto px-2 py-1 text-[11px] text-muted-foreground hover:text-foreground hover:bg-transparent"
+          >
             Clear
-          </button>
+          </Button>
         </div>
       </div>
-      <div className="console-content">
+      <ScrollArea className="flex-1 p-2">
         {logs.length === 0 ? (
-          <div className="console-empty">Console output will appear here...</div>
+          <div className="text-muted-foreground italic text-[12px] font-mono">Console output will appear here...</div>
         ) : (
-          logs.map((log, index) => (
-            <div key={index} className={`console-line ${getLogClass(log.type)}`}>
-              {log.message}
-            </div>
-          ))
+          <div className="font-mono text-[12px]">
+            {logs.map((log, index) => (
+              <div key={index} className={`py-0.5 break-words ${getLogColor(log.type)}`}>
+                {log.message}
+              </div>
+            ))}
+          </div>
         )}
-      </div>
+      </ScrollArea>
     </div>
   );
 }

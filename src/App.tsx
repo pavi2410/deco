@@ -3,8 +3,12 @@ import { FileTree } from './components/FileTree';
 import { CodeEditor } from './components/CodeEditor';
 import { Console } from './components/Console';
 import { Preview } from './components/Preview';
+import {
+  ResizablePanelGroup,
+  ResizablePanel,
+  ResizableHandle,
+} from '@/components/ui/resizable';
 import type { FileContent, FileName, ConsoleLog } from './types';
-import './App.css';
 
 const initialFiles: FileContent = {
   'index.html': `<div id="root">
@@ -66,32 +70,49 @@ function App() {
   const fileNames: FileName[] = ['script.js', 'style.css', 'index.html'];
 
   return (
-    <div className="app">
-      <div className="editor-container">
-        <FileTree
-          files={fileNames}
-          activeFile={activeFile}
-          onFileSelect={setActiveFile}
-        />
-        <CodeEditor
-          value={files[activeFile]}
-          onChange={handleFileChange}
-          fileName={activeFile}
-        />
-      </div>
-      <div className="output-container">
-        <Console 
-          logs={consoleLogs} 
-          onClear={handleClearConsole}
-          persistLogs={persistLogs}
-          onTogglePersist={handleTogglePersist}
-        />
-        <Preview 
-          files={files} 
-          onConsoleLog={handleConsoleLog}
-          onPreviewUpdate={handlePreviewUpdate}
-        />
-      </div>
+    <div className="h-screen bg-background text-foreground">
+      <ResizablePanelGroup direction="vertical">
+        <ResizablePanel defaultSize={60} minSize={30}>
+          <ResizablePanelGroup direction="horizontal">
+            <ResizablePanel defaultSize={20} minSize={10} maxSize={40}>
+              <FileTree
+                files={fileNames}
+                activeFile={activeFile}
+                onFileSelect={setActiveFile}
+              />
+            </ResizablePanel>
+            <ResizableHandle />
+            <ResizablePanel defaultSize={80} minSize={40}>
+              <CodeEditor
+                value={files[activeFile]}
+                onChange={handleFileChange}
+                fileName={activeFile}
+              />
+            </ResizablePanel>
+          </ResizablePanelGroup>
+        </ResizablePanel>
+        <ResizableHandle />
+        <ResizablePanel defaultSize={40} minSize={20}>
+          <ResizablePanelGroup direction="horizontal">
+            <ResizablePanel defaultSize={50} minSize={30}>
+              <Console 
+                logs={consoleLogs} 
+                onClear={handleClearConsole}
+                persistLogs={persistLogs}
+                onTogglePersist={handleTogglePersist}
+              />
+            </ResizablePanel>
+            <ResizableHandle />
+            <ResizablePanel defaultSize={50} minSize={30}>
+              <Preview 
+                files={files} 
+                onConsoleLog={handleConsoleLog}
+                onPreviewUpdate={handlePreviewUpdate}
+              />
+            </ResizablePanel>
+          </ResizablePanelGroup>
+        </ResizablePanel>
+      </ResizablePanelGroup>
     </div>
   );
 }
