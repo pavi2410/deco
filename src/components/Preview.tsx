@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useEffectEvent } from 'react';
 import type { FileContent, ConsoleLog } from '../types';
 
 interface PreviewProps {
@@ -8,32 +8,28 @@ interface PreviewProps {
 }
 
 export function Preview({ files, onConsoleLog, onPreviewUpdate }: PreviewProps) {
-  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const { 'style.css': styles, 'index.html': html, 'script.js': script } = files;
 
-  useEffect(() => {
-    if (!iframeRef.current) return;
-
-    // Clear console on preview update
-    onPreviewUpdate();
-
-    const iframe = iframeRef.current;
-    const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
-
-    if (!iframeDoc) return;
-
-    // Create the complete HTML document with injected console interceptor
-    const fullHtml = `
+  const fullHtml = `
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
-  <style>${files['style.css']}</style>
+  <style>${styles}</style>
 </head>
 <body>
-  ${files['index.html']}
+  ${html}
   <script>
     // Intercept console methods
-    (function() {
+    (function consoleInterceptor() {
+      function sendDataToParent(type, method, message) {
+        window.parent.postMessage({
+          type,
+          method,
+          message
+        }, '*');
+      }
+
       const originalConsole = {
         log: console.log,
         error: console.error,
@@ -41,66 +37,63 @@ export function Preview({ files, onConsoleLog, onPreviewUpdate }: PreviewProps) 
         info: console.info
       };
 
-      ['log', 'error', 'warn', 'info'].forEach(method => {
-        console[method] = function(...args) {
+      for (const method of ['log', 'error', 'warn', 'info']) {
+        console[method] = function (...args) {
           originalConsole[method].apply(console, args);
-          window.parent.postMessage({
-            type: 'console',
-            method: method,
-            message: args.map(arg => {
-              if (typeof arg === 'object') {
-                try {
-                  return JSON.stringify(arg, null, 2);
-                } catch (e) {
-                  return String(arg);
-                }
+          const message = args.map(arg => {
+            if (typeof arg === 'object') {
+              try {
+                return JSON.stringify(arg, null, 2);
+              } catch (e) {
+                return String(arg);
               }
-              return String(arg);
-            }).join(' ')
-          }, '*');
+            }
+            return String(arg);
+          }).join(' ');
+          sendDataToParent('console', method, message);
         };
-      });
+      }
 
       // Catch errors
-      window.onerror = function(message, source, lineno, colno, error) {
-        window.parent.postMessage({
-          type: 'console',
-          method: 'error',
-          message: \`Error: \${message}\`
-        }, '*');
+      window.onerror = function (message, source, lineno, colno, error) {
+        // sendDataToParent('window', 'error', { message, source, lineno, colno, error });
+        sendDataToParent('console', 'error', \`Error: \${message}\`);
         return false;
       };
+
+      // Clear console
+      sendDataToParent('clear-console');
     })();
   </script>
   <script>
     // Wrap user code in IIFE to prevent variable conflicts
     (function() {
-      ${files['script.js']}
+      ${script}
     })();
   </script>
 </body>
 </html>
     `;
 
-    iframeDoc.open();
-    iframeDoc.write(fullHtml);
-    iframeDoc.close();
-  }, [files, onPreviewUpdate]);
-
-  useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-      if (event.data.type === 'console') {
+  const handleMessage = useEffectEvent((event: MessageEvent) => {
+    switch (event.data.type) {
+      case 'console':
         onConsoleLog({
           type: event.data.method,
           message: event.data.message,
           timestamp: Date.now(),
         });
-      }
-    };
+        break;
+      case 'clear-console':
+        onPreviewUpdate();
+        break;
+    }
+  });
 
+  useEffect(() => {
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, [onConsoleLog]);
+  }, []);
 
   return (
     <div className="h-full flex flex-col bg-background">
@@ -108,10 +101,10 @@ export function Preview({ files, onConsoleLog, onPreviewUpdate }: PreviewProps) 
         <span>Web View</span>
       </div>
       <iframe
-        ref={iframeRef}
         className="flex-1 border-none bg-white w-full h-full"
-        sandbox="allow-scripts allow-same-origin"
+        sandbox="allow-scripts"
         title="Preview"
+        srcDoc={fullHtml}
       />
     </div>
   );
